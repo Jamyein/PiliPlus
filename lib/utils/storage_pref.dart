@@ -936,6 +936,9 @@ abstract final class Pref {
       PlayRepeat.values[_setting.get(SettingBoxKey.audioPlayMode) ??
           PlayRepeat.listOrder.index];
 
+  static bool get enableInAppMiniPlayer =>
+      _setting.get(SettingBoxKey.enableInAppMiniPlayer, defaultValue: true);
+
   static bool get enablePlayAll =>
       _setting.get(SettingBoxKey.enablePlayAll, defaultValue: true);
 

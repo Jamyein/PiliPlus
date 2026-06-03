@@ -401,6 +401,9 @@ class VideoDetailController extends GetxController
     heroTag = args['heroTag'];
     cover = RxString(args['cover'] ?? '');
     isVertical = RxBool(args['isVertical'] ?? false);
+    if (args['position'] != null) {
+      playedTime = args['position'] as Duration;
+    }
 
     sourceType = args['sourceType'] ?? SourceType.normal;
     isFileSource = sourceType == SourceType.file;

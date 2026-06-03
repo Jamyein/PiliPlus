@@ -198,6 +198,13 @@ List<SettingsModel> get playSettings => [
     ),
   if (Platform.isAndroid) ...[
     SwitchModel(
+      title: '应用内小窗播放',
+      subtitle: '返回其他页面时以小窗浮窗继续播放',
+      leading: const Icon(Icons.picture_in_picture_alt_outlined),
+      setKey: SettingBoxKey.enableInAppMiniPlayer,
+      defaultVal: true,
+    ),
+    SwitchModel(
       title: '后台画中画',
       subtitle: '进入后台时以小窗形式（PiP）播放',
       leading: const Icon(Icons.picture_in_picture_outlined),

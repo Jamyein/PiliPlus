@@ -214,6 +214,10 @@ class PlPlayerController with BlockConfigMixin {
   late bool isDesktopPip = false;
   late Rect _lastWindowBounds;
 
+  final RxBool isMiniPlayer = false.obs;
+  Map<String, dynamic>? _storedVideoArgs;
+  Map<String, dynamic>? get videoArgs => _storedVideoArgs;
+
   late final showWindowTitleBar = Pref.showWindowTitleBar;
   late final RxBool isAlwaysOnTop = false.obs;
   Future<void> setAlwaysOnTop(bool value) {
@@ -272,6 +276,35 @@ class PlPlayerController with BlockConfigMixin {
       exitDesktopPip();
     } else {
       enterDesktopPip();
+    }
+  }
+
+  void enterMiniPlayer() {
+    if (!Pref.enableInAppMiniPlayer) return;
+    if (isMiniPlayer.value) return;
+    if (isPipMode) return;
+    isMiniPlayer.value = true;
+    _storedVideoArgs = {
+      'bvid': _bvid,
+      'aid': _aid,
+      'cid': cid,
+      'epId': _epid,
+      'seasonId': _seasonId,
+      'pgcType': _pgcType,
+      'videoType': _videoType,
+      'heroTag': 'mini_player_${DateTime.now().millisecondsSinceEpoch}',
+      'position': position,
+    };
+  }
+
+  Future<void> exitMiniPlayer({bool navigateToVideo = true}) async {
+    isMiniPlayer.value = false;
+    if (navigateToVideo && _storedVideoArgs != null) {
+      final args = Map<String, dynamic>.from(_storedVideoArgs!);
+      _storedVideoArgs = null;
+      await Get.toNamed('/videoV', arguments: args);
+    } else {
+      _storedVideoArgs = null;
     }
   }
 
@@ -1605,6 +1638,9 @@ class PlPlayerController with BlockConfigMixin {
 
   void dispose() {
     // 每次减1，最后销毁
+    if (isMiniPlayer.value && !_isCloseAll) {
+      return;
+    }
     resetScreenRotation();
     cancelLongPressTimer();
     _cancelSubForSeek();
