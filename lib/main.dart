@@ -9,6 +9,7 @@ import 'package:PiliPlus/common/widgets/scale_app.dart';
 import 'package:PiliPlus/common/widgets/scroll_behavior.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
+import 'package:PiliPlus/pages/main/widgets/mini_player_overlay.dart';
 import 'package:PiliPlus/plugin/pl_player/utils/fullscreen.dart';
 import 'package:PiliPlus/router/app_pages.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -321,10 +322,22 @@ class MyApp extends StatelessWidget {
     if (PlatformUtils.isDesktop) {
       return BackDetector(
         onBack: _onBack,
-        child: child,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            const MiniPlayerOverlay(),
+          ],
+        ),
       );
     }
-    return child;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child!,
+        const MiniPlayerOverlay(),
+      ],
+    );
   }
 
   /// from [DynamicColorBuilderState.initPlatformState]

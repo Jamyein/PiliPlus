@@ -91,6 +91,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     if (plPlayerController.removeSafeArea) {
       hideSystemBar();
     }
+    plPlayerController.isMiniPlayer.value = false;
   }
 
   @override
@@ -114,6 +115,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
 
   @override
   Future<void> didPopNext() async {
+    plPlayerController.isMiniPlayer.value = false;
     addObserverMobile(this);
     if (!plPlayerController.isLive) {
       plPlayerController.isLive = true;
@@ -152,7 +154,17 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       ..cancelLiveTimer()
       ..closeLiveMsg()
       ..isPlaying = plPlayerController.playerStatus.isPlaying;
+    _tryEnterMini();
     super.didPushNext();
+  }
+
+  bool _tryEnterMini() {
+    if (plPlayerController.isCloseAll) return false;
+    if (!Pref.enableInAppMiniPlayer) return false;
+    if (!plPlayerController.playerStatus.isPlaying) return false;
+    if (plPlayerController.isPipMode) return false;
+    plPlayerController.enterMiniPlayer();
+    return true;
   }
 
   void playerListener(PlayerStatus status) {
@@ -177,9 +189,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
       ScreenBrightnessPlatform.instance.resetApplicationScreenBrightness();
     }
     PlPlayerController.setPlayCallBack(null);
-    plPlayerController
-      ..removeStatusLister(playerListener)
-      ..dispose();
+    plPlayerController.removeStatusLister(playerListener);
+    if (!_tryEnterMini()) {
+      plPlayerController.dispose();
+    }
     for (final e in LiveContributionRankType.values) {
       Get.delete<ContributionRankController>(
         tag: '${_liveRoomController.roomId}${e.name}',

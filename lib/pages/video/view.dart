@@ -167,6 +167,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
     videoSourceInit();
 
+    plPlayerController?.isMiniPlayer.value = false;
+
     addObserverMobile(this);
   }
 
@@ -330,6 +332,16 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
     }
   }
 
+  bool _tryEnterMini() {
+    if (plPlayerController == null) return false;
+    if (plPlayerController!.isCloseAll) return false;
+    if (!Pref.enableInAppMiniPlayer) return false;
+    if (!plPlayerController!.playerStatus.isPlaying) return false;
+    if (plPlayerController!.isPipMode) return false;
+    plPlayerController!.enterMiniPlayer();
+    return true;
+  }
+
   @override
   void dispose() {
     plPlayerController
@@ -358,11 +370,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       videoPlayerServiceHandler?.onVideoDetailDispose(heroTag);
       if (plPlayerController != null) {
         videoDetailController.makeHeartBeat();
-        if (Pref.enableInAppMiniPlayer &&
-            plPlayerController!.playerStatus.isPlaying &&
-            !plPlayerController!.isPipMode) {
-          plPlayerController!.enterMiniPlayer();
-        } else {
+        if (!_tryEnterMini()) {
           plPlayerController!.dispose();
         }
       } else {
@@ -397,8 +405,10 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
       videoDetailController.makeHeartBeat();
       plPlayerController!
         ..removeStatusLister(playerListener)
-        ..removePositionListener(positionListener)
-        ..pause();
+        ..removePositionListener(positionListener);
+      if (!_tryEnterMini()) {
+        plPlayerController!.pause();
+      }
     }
   }
 
@@ -406,6 +416,8 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
   // 返回当前页面时
   void didPopNext() {
     super.didPopNext();
+
+    plPlayerController?.isMiniPlayer.value = false;
 
     if (videoDetailController.plPlayerController.isCloseAll) {
       return;
