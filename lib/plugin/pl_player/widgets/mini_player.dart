@@ -9,11 +9,15 @@ import 'package:media_kit_video/media_kit_video.dart';
 class MiniPlayer extends StatefulWidget {
   final double miniWidth;
   final double miniHeight;
+  final ValueChanged<Offset>? onPositionChanged;
+  final ValueChanged<Offset>? onDragEnd;
 
   const MiniPlayer({
     super.key,
     this.miniWidth = 160.0,
     this.miniHeight = 90.0,
+    this.onPositionChanged,
+    this.onDragEnd,
   });
 
   @override
@@ -27,6 +31,7 @@ class _MiniPlayerState extends State<MiniPlayer>
   double _dragStartX = 0;
   double _dragStartY = 0;
   bool _isDragging = false;
+  bool _isDismissing = false;
   double _dismissThreshold = 0;
 
   late AnimationController _dismissAnimationController;
@@ -45,10 +50,14 @@ class _MiniPlayerState extends State<MiniPlayer>
         curve: Curves.easeInOut,
       ),
     );
-    _position = Offset(
-      MediaQuery.of(Get.context!).size.width - widget.miniWidth - 16,
-      MediaQuery.of(Get.context!).size.height * 0.3,
-    );
+    final ctx = Get.context;
+    if (ctx != null) {
+      final size = MediaQuery.of(ctx).size;
+      _position = Offset(
+        size.width - widget.miniWidth - 16,
+        size.height * 0.3,
+      );
+    }
     _dismissThreshold = widget.miniHeight * 0.4;
   }
 
@@ -83,6 +92,7 @@ class _MiniPlayerState extends State<MiniPlayer>
         _dragStartY + details.delta.dy,
       );
     });
+    widget.onPositionChanged?.call(_position);
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -105,11 +115,17 @@ class _MiniPlayerState extends State<MiniPlayer>
 
     final snapLeft = dx < screenWidth / 2;
     setState(() {
-      _position = Offset(snapLeft ? 8.0 : screenWidth - widget.miniWidth - 8, dy);
+      _position = Offset(
+        snapLeft ? 8.0 : screenWidth - widget.miniWidth - 8,
+        dy,
+      );
     });
+    widget.onDragEnd?.call(_position);
   }
 
   void _animateDismiss() {
+    if (_isDismissing) return;
+    _isDismissing = true;
     _dismissAnimationController.forward().then((_) {
       if (mounted) {
         _onClose();
@@ -128,51 +144,39 @@ class _MiniPlayerState extends State<MiniPlayer>
       stream: controller.playerStatus.stream,
       builder: (context, snapshot) {
         final isPlaying = snapshot.data?.isPlaying ?? true;
-        return ValueListenableBuilder<double>(
-          valueListenable: _dismissAnimation,
-          builder: (context, scale, _) {
-            return Positioned(
-              left: _position.dx,
-              top: _position.dy * scale,
-              child: GestureDetector(
-                onTap: _onTap,
-                onPanStart: _onPanStart,
-                onPanUpdate: _onPanUpdate,
-                onPanEnd: _onPanEnd,
-                child: Transform.scale(
-                  scale: scale,
-                  child: Container(
-                    width: widget.miniWidth,
-                    height: widget.miniHeight,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: SimpleVideo(
-                            controller: videoController,
-                            fill: Colors.black,
-                          ),
-                        ),
-                        _buildOverlay(isPlaying),
-                      ],
-                    ),
+        return GestureDetector(
+          onTap: _onTap,
+          onPanStart: _onPanStart,
+          onPanUpdate: _onPanUpdate,
+          onPanEnd: _onPanEnd,
+          child: Container(
+            width: widget.miniWidth,
+            height: widget.miniHeight,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SimpleVideo(
+                    controller: videoController,
+                    fill: Colors.black,
                   ),
                 ),
-              ),
-            );
-          },
+                _buildOverlay(isPlaying),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -236,7 +240,7 @@ class _MiniPlayerState extends State<MiniPlayer>
       child: Row(
         children: [
           const SizedBox(width: 6),
-            GestureDetector(
+          GestureDetector(
             onTap: () {
               final ctrl = _controller;
               if (isPlaying) {

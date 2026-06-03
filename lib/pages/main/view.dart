@@ -11,9 +11,9 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/pages/main/widgets/mini_player_overlay.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
-import 'package:PiliPlus/plugin/pl_player/widgets/mini_player.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/context_ext.dart';
@@ -493,15 +493,10 @@ class _MainAppState extends PopScopeState<MainApp>
     }
 
     child = Stack(
+      fit: StackFit.expand,
       children: [
         child,
-        Obx(() {
-          final player = PlPlayerController.instance;
-          if (player != null && player.isMiniPlayer.value) {
-            return const MiniPlayer();
-          }
-          return const SizedBox.shrink();
-        }),
+        const MiniPlayerOverlay(),
       ],
     );
 
