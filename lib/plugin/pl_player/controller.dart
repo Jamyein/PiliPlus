@@ -73,6 +73,12 @@ class PlPlayerController with BlockConfigMixin {
   // 添加一个私有静态变量来保存实例
   static PlPlayerController? _instance;
 
+  // 响应式通知 instance 的创建/销毁，供在 app 启动时构建、需延迟绑定
+  // 到首个播放器实例的 widget（例如 MiniPlayerOverlay）使用。
+  static final Rx<PlPlayerController?> _instanceRx =
+      Rx<PlPlayerController?>(null);
+  static Rx<PlPlayerController?> get instanceRx => _instanceRx;
+
   // 流事件  监听播放状态变化
   // StreamSubscription? _playerEventSubs;
 
@@ -632,9 +638,14 @@ class PlPlayerController with BlockConfigMixin {
   // 获取实例 传参
   static PlPlayerController getInstance({bool isLive = false}) {
     // 如果实例尚未创建，则创建一个新实例
-    return (_instance ??= PlPlayerController._())
+    final isNew = _instance == null;
+    final instance = (_instance ??= PlPlayerController._())
       ..isLive = isLive
       .._playerCount += 1;
+    if (isNew) {
+      _instanceRx.value = instance;
+    }
+    return instance;
   }
 
   bool _processing = false;
@@ -1697,6 +1708,7 @@ class PlPlayerController with BlockConfigMixin {
     _videoPlayerController = null;
     _videoController = null;
     _instance = null;
+    _instanceRx.value = null;
     videoPlayerServiceHandler?.clear();
   }
 

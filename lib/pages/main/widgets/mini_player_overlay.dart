@@ -18,7 +18,8 @@ class MiniPlayerOverlay extends StatefulWidget {
 }
 
 class _MiniPlayerOverlayState extends State<MiniPlayerOverlay> {
-  Worker? _worker;
+  Worker? _instanceWorker;
+  Worker? _miniWorker;
   bool _visible = false;
   Offset _position = const Offset(16, 100);
   bool _initialized = false;
@@ -26,6 +27,16 @@ class _MiniPlayerOverlayState extends State<MiniPlayerOverlay> {
   @override
   void initState() {
     super.initState();
+    // 监听单例实例的创建/销毁：instance 可能晚于本组件创建（首播视频时），
+    // 也可能在前一个视频结束后被新的实例替换。任一变化都要重新绑定 isMiniPlayer。
+    _instanceWorker = ever<PlPlayerController?>(
+      PlPlayerController.instanceRx,
+      (_) {
+        if (!mounted) return;
+        _bindPlayer();
+        setState(() {});
+      },
+    );
     _bindPlayer();
   }
 
@@ -35,7 +46,6 @@ class _MiniPlayerOverlayState extends State<MiniPlayerOverlay> {
     if (!_initialized) {
       _initialized = true;
       _initPosition();
-      _bindPlayer();
     }
   }
 
@@ -48,15 +58,16 @@ class _MiniPlayerOverlayState extends State<MiniPlayerOverlay> {
   }
 
   void _bindPlayer() {
-    _worker?.dispose();
-    _worker = null;
+    // 先解绑旧的内部 worker，避免泄漏以及对已销毁 Rx 的监听。
+    _miniWorker?.dispose();
+    _miniWorker = null;
     final player = PlPlayerController.instance;
     if (player == null) {
       _visible = false;
       return;
     }
     _visible = player.isMiniPlayer.value;
-    _worker = ever<bool>(player.isMiniPlayer, (val) {
+    _miniWorker = ever<bool>(player.isMiniPlayer, (val) {
       if (mounted) {
         setState(() => _visible = val);
       }
@@ -65,7 +76,8 @@ class _MiniPlayerOverlayState extends State<MiniPlayerOverlay> {
 
   @override
   void dispose() {
-    _worker?.dispose();
+    _instanceWorker?.dispose();
+    _miniWorker?.dispose();
     super.dispose();
   }
 
