@@ -158,14 +158,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
     super.didPushNext();
   }
 
-  bool _tryEnterMini() {
-    if (plPlayerController.isCloseAll) return false;
-    if (!Pref.enableInAppMiniPlayer) return false;
-    if (!plPlayerController.playerStatus.isPlaying) return false;
-    if (plPlayerController.isPipMode) return false;
-    plPlayerController.enterMiniPlayer();
-    return true;
-  }
+  bool _tryEnterMini() => plPlayerController.tryEnterMiniPlayer();
 
   void playerListener(PlayerStatus status) {
     if (status.isPlaying) {

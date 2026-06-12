@@ -303,12 +303,50 @@ class PlPlayerController with BlockConfigMixin {
     };
   }
 
+  /// 集中判断是否可以进入应用内小窗。返回 true 表示已成功进入。
+  /// 之前每个调用方(video/view、live/view、onPopInvokedWithResult)都
+  /// 各自重复一份判断,导致后退到首页时漏掉了入口。
+  bool tryEnterMiniPlayer() {
+    if (_isCloseAll) return false;
+    if (!Pref.enableInAppMiniPlayer) return false;
+    if (!playerStatus.isPlaying) return false;
+    if (isPipMode) return false;
+    if (isMiniPlayer.value) return true;
+    enterMiniPlayer();
+    return isMiniPlayer.value;
+  }
+
   Future<void> exitMiniPlayer({bool navigateToVideo = true}) async {
     isMiniPlayer.value = false;
     if (navigateToVideo && _storedVideoArgs != null) {
       final args = Map<String, dynamic>.from(_storedVideoArgs!);
+      // 进入小窗后仍在继续播放,position 在 enterMiniPlayer 时取到的值已经
+      // 过时;退出时一定要用当前 controller 的实时进度,否则视频会从用户
+      // 点击小窗的那一刻往回跳。
+      args['position'] = position;
       _storedVideoArgs = null;
-      await Get.toNamed('/videoV', arguments: args);
+      // 优先回到栈中已有的视频页(进入 up 主页这种 push 场景),只有
+      // 在视频页已经被弹出(返回首页)时才推一个新的视频页。
+      final nav = Get.key.currentState;
+      if (nav != null) {
+        bool foundVideoRoute = false;
+        nav.popUntil((route) {
+          if (foundVideoRoute) return true;
+          final name = route.settings.name;
+          if (name == '/videoV' || name == '/liveRoom') {
+            foundVideoRoute = true;
+            return true;
+          }
+          return route.isFirst;
+        });
+        if (foundVideoRoute) {
+          // 栈里仍然存在视频页,didPopNext 会恢复;无需重新创建。
+          return;
+        }
+      }
+      // 视频页已被弹出,需要重建。直播和点播路由不同。
+      final route = isLive ? '/liveRoom' : '/videoV';
+      await Get.toNamed(route, arguments: args);
     } else {
       _storedVideoArgs = null;
     }
@@ -1820,7 +1858,11 @@ class PlPlayerController with BlockConfigMixin {
 
   void onPopInvokedWithResult(bool didPop, Object? result) {
     if (didPop) {
-      if (playerStatus.isPlaying) {
+      // 系统返回键已经把视频页弹出栈了。在 pause 之前先尝试进入应用内小窗,
+      // 否则 _tryEnterMini 在 dispose() 中再判断 playerStatus.isPlaying 时
+      // 会因为这里提前 pause 而拿到 false,导致返回首页时小窗丢失。
+      final entered = tryEnterMiniPlayer();
+      if (!entered && playerStatus.isPlaying) {
         pause();
       }
 

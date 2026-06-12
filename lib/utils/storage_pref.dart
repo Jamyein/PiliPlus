@@ -939,6 +939,15 @@ abstract final class Pref {
   static bool get enableInAppMiniPlayer =>
       _setting.get(SettingBoxKey.enableInAppMiniPlayer, defaultValue: true);
 
+  // 应用内小窗最近一次拖拽到的位置。null 表示沿用默认位置
+  static double? get miniPlayerPosX => _setting.get(SettingBoxKey.miniPlayerPosX);
+  static double? get miniPlayerPosY => _setting.get(SettingBoxKey.miniPlayerPosY);
+
+  static Future<void> setMiniPlayerPos(double x, double y) async {
+    await _setting.put(SettingBoxKey.miniPlayerPosX, x);
+    await _setting.put(SettingBoxKey.miniPlayerPosY, y);
+  }
+
   static bool get enablePlayAll =>
       _setting.get(SettingBoxKey.enablePlayAll, defaultValue: true);
 

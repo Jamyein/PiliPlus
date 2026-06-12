@@ -61,7 +61,6 @@ import 'package:PiliPlus/utils/num_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -334,12 +333,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
 
   bool _tryEnterMini() {
     if (plPlayerController == null) return false;
-    if (plPlayerController!.isCloseAll) return false;
-    if (!Pref.enableInAppMiniPlayer) return false;
-    if (!plPlayerController!.playerStatus.isPlaying) return false;
-    if (plPlayerController!.isPipMode) return false;
-    plPlayerController!.enterMiniPlayer();
-    return true;
+    return plPlayerController!.tryEnterMiniPlayer();
   }
 
   @override

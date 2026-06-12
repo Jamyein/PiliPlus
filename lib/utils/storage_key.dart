@@ -153,7 +153,9 @@ abstract final class SettingBoxKey {
       floatingNavBar = 'floatingNavBar',
       removeSafeArea = 'removeSafeArea',
       angleDegrees = 'angleDegrees',
-      enableInAppMiniPlayer = 'enableInAppMiniPlayer';
+      enableInAppMiniPlayer = 'enableInAppMiniPlayer',
+      miniPlayerPosX = 'miniPlayerPosX',
+      miniPlayerPosY = 'miniPlayerPosY';
 
   static const String minimizeOnExit = 'minimizeOnExit',
       windowSize = 'windowSize',
